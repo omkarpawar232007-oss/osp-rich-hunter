@@ -1,4 +1,4 @@
- from flask import Flask
+from flask import Flask
 import random
 import datetime
 app = Flask(__name__)
