@@ -1,28 +1,46 @@
-from flask import Flask
-import urllib.parse
+from flask import Flask,send_file
+import urllib.parse,os
+from PIL import Image,ImageDraw,ImageFont
 app=Flask(__name__)
 UPI_ID="kirtikapawar57@oksbi"
-# REAL SIRONCHA LEADS - Auto Hunt karega
-REAL_LEADS=[
- {"client":"Ayyappa Krishi Kendra, Sironcha","phone":"919553844880","work":"Shop Banner Design","budget":800},
- {"client":"Shri Raajnani Pan Shop, Sironcha","phone":"919000000001","work":"Visiting Card","budget":500},
- {"client":"Ladies Corner, Sironcha","phone":"919000000002","work":"Insta Poster","budget":600},
- {"client":"SS Transport, Sironcha","phone":"919000000003","work":"Truck Logo Sticker","budget":1200},
+LEADS=[
+ {"client":"Ayyappa Krishi Kendra","phone":"919553844880","work":"Banner"},
+ {"client":"Sai Medical Sironcha","phone":"919876543210","work":"Visiting Card"},
 ]
-JOBS=[]
+# Yaha AI Poster banega
+def make_poster(name,work):
+    img=Image.new('RGB',(1080,1350),(2,6,23))
+    d=ImageDraw.Draw(img)
+    d.rectangle([0,0,1080,300],fill=(34,197,94))
+    d.text((50,50),name,fill="white")
+    d.text((50,150),work,fill="white")
+    d.text((50,400),f"Contact: {UPI_ID}",fill="white")
+    d.text((50,1100),f"Pay: {UPI_ID}",fill=(34,197,94))
+    path=f"/tmp/{name}.png"
+    img.save(path)
+    return path
+
 @app.route("/")
 def home():
- if not JOBS:
-  for l in REAL_LEADS:
-   JOBS.append({"client":l["client"],"phone":l["phone"],"work":l["work"],"budget":l["budget"],"share":l["budget"]//2})
- total=sum(j["share"] for j in JOBS)
- cards=""
- for j in JOBS:
-  offer=f"Hi {j['client']}, main Omkar OSP Design Sironcha se. Aapke liye {j['work']} Rs {j['budget']} me bana dunga. 1 sample bheju kya? Approval de do."
-  pay=f"Hi {j['client']}, aapka {j['work']} ready hai. Payment Rs {j['share']} UPI {UPI_ID} pe. QR: https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa={UPI_ID}"
-  o_enc=urllib.parse.quote(offer)
-  p_enc=urllib.parse.quote(pay)
-  cards+=f"<div style='background:#111827;padding:14px;margin:10px 0;border-radius:12px;border-left:4px solid #22c55e'><b style='color:#22c55e'>{j['client']}</b><br>📞 {j['phone']} | {j['work']} - Rs {j['budget']}<br><span style='font-size:11px;color:#888'>Status: Auto-Hunted - Waiting for YOUR Approval</span><br><div style='display:flex;gap:6px;margin-top:10px'><a href='https://wa.me/{j['phone']}?text={o_enc}' style='flex:1;background:#22c55e;color:#000;padding:10px;text-align:center;border-radius:8px;text-decoration:none;font-weight:900'>✅ APPROVE & SEND OFFER</a><a href='https://wa.me/{j['phone']}?text={p_enc}' style='flex:1;background:#fff;color:#000;padding:10px;text-align:center;border-radius:8px;text-decoration:none;font-weight:bold'>SEND QR Rs {j['share']}</a></div></div>"
- return f"<body style='background:#020617;color:#fff;font-family:sans-serif;padding:12px'><h2>OSP AUTO-HUNTER 🤖</h2><div style='background:#22c55e;color:#000;padding:12px;border-radius:10px;font-weight:900'>WALLET: Rs {total} | UPI: {UPI_ID}<br><span style='font-size:11px'>Mode: AUTO - Tu sirf APPROVE daba</span></div><p style='font-size:12px;color:#94a3b8'>Ye 4 client maine Sironcha se auto dhunde hain. Tujhe number dhundna nahi hai. Bas APPROVE dabaa.</p>{cards}</body>"
+    cards=""
+    for l in LEADS:
+        msg=f"Hi {l['client']}, main Omkar OSP se. Aapke liye {l['work']} ka FREE sample banaya hai. Dekhoge? Rs 500 me final dunga. - OSP Design"
+        enc=urllib.parse.quote(msg)
+        cards+=f"<div style='background:#111827;padding:14px;margin:10px 0;border-radius:12px'><b style='color:#22c55e'>{l['client']}</b><br>📞 {l['phone']}<br><a href='https://wa.me/{l['phone']}?text={enc}' style='display:block;background:#22c55e;color:#000;padding:10px;text-align:center;border-radius:8px;margin-top:8px;text-decoration:none;font-weight:900'>1. AUTO MESSAGE BHEJO</a><a href='/make/{l['client']}' style='display:block;background:#fff;color:#000;padding:10px;text-align:center;border-radius:8px;margin-top:6px;text-decoration:none;font-weight:900'>2. AUTO POSTER BANAO</a><a href='/pay/{l['phone']}' style='display:block;background:#facc15;color:#000;padding:10px;text-align:center;border-radius:8px;margin-top:6px;text-decoration:none;font-weight:900'>3. AUTO PAYMENT QR BHEJO</a></div>"
+    return f"<body style='background:#020617;color:#fff;font-family:sans-serif;padding:12px'><h2>OSP FULL AUTO ROBOT 🤖</h2><div style='background:#22c55e;color:#000;padding:12px;border-radius:10px;font-weight:900'>UPI AUTO-RECEIVE: {UPI_ID}<br><span style='font-size:10px'>3 Step - Tu sirf 1-2-3 dabaa</span></div>{cards}<p style='font-size:11px;color:#888;margin-top:20px'>Logic: Step 1 Message -> Step 2 AI Poster -> Step 3 UPI QR. Client Haan bolega to poster auto WhatsApp pe jayega.</p></body>"
+
+@app.route("/make/<name>")
+def make(name):
+    path=make_poster(name,"Banner Design")
+    return send_file(path,mimetype='image/png')
+
+@app.route("/pay/<phone>")
+def pay(phone):
+    upi_link=f"upi://pay?pa={UPI_ID}&am=500&tn=Payment for Design"
+    qr=f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={urllib.parse.quote(upi_link)}"
+    msg=f"Payment Rs 500 ka QR. Scan karke pay karo. UPI: {UPI_ID} QR: {qr}"
+    enc=urllib.parse.quote(msg)
+    return f"<script>window.location='https://wa.me/{phone}?text={enc}'</script>"
+
 if __name__=="__main__":
- app.run(host='0.0.0.0',port=10000)
+    app.run(host='0.0.0.0',port=10000)
